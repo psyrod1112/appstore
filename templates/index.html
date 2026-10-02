@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PsyStore & Portfolio | demo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        crimson: {
+                            50: '#fdf2f2', 100: '#fde8e8', 500: '#e02424', 600: '#c81e1e',
+                            700: '#9b1c1c', 800: '#771d1d', 900: '#550c0c', 950: '#380404',
+                        },
+                        burgundy: { 800: '#4a0e17', 900: '#2d070d', 950: '#1a0307' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['Fira Code', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(18, 5, 8, 0.8); }
+        ::-webkit-scrollbar-thumb { background: rgba(155, 28, 28, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(224, 36, 36, 0.7); }
+        .glass-panel { background: rgba(26, 7, 12, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(224, 36, 36, 0.12); }
+        .glow-effect { box-shadow: 0 0 50px -10px rgba(224, 36, 36, 0.15); }
+    </style>
+</head>
+<body class="bg-[#0f0205] text-slate-100 font-sans antialiased min-h-screen selection:bg-crimson-600 selection:text-white flex flex-col transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-crimson-900/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-crimson-800 to-crimson-500 flex items-center justify-center text-white font-bold shadow-lg shadow-crimson-600/30">
+                    <i data-lucide="terminal" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-crimson-100 to-crimson-300 bg-clip-text text-transparent">PsyStore</span>
+                    <span class="block text-xs text-crimson-400 font-mono">Dev Portfolio & Store</span>
+                </div>
+            </div>
+
+            <nav class="hidden md:flex items-center space-x-1 bg-burgundy-950/60 p-1.5 rounded-full border border-crimson-900/40">
+                <button onclick="switchTab('home')" id="nav-home" class="nav-btn px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 text-white bg-crimson-900/80 shadow-sm border border-crimson-700/50">Home & Showcase</button>
+                <button onclick="switchTab('projects')" id="nav-projects" class="nav-btn px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">Projects Marketplace</button>
+                <button onclick="switchTab('mypage')" id="nav-mypage" class="nav-btn px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i> My Assets
+                </button>
+                <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+                    <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                </button>
+            </nav>
+
+            <div class="flex items-center space-x-4">
+                <div id="auth-container"></div>
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl bg-burgundy-950 border border-crimson-900/50 text-slate-400 hover:text-slate-200">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden px-4 pt-2 pb-4 space-y-2 border-t border-crimson-900/40 bg-[#0f0205]">
+            <button onclick="switchTab('home'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-burgundy-900/50">Home & Showcase</button>
+            <button onclick="switchTab('projects'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-burgundy-900/50">Projects Marketplace</button>
+            <button onclick="switchTab('mypage'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-burgundy-900/50">My Assets & History</button>
+            <button onclick="switchTab('settings'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-burgundy-900/50">Settings</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- HOME -->
+        <section id="view-home" class="space-y-16 animate-fadeIn">
+            <div class="relative overflow-hidden rounded-3xl glass-panel p-8 sm:p-12 lg:p-16 glow-effect">
+                <div class="absolute -right-20 -top-20 w-96 h-96 bg-crimson-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-burgundy-800/20 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-7 space-y-6">
+                        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-crimson-950 border border-crimson-800/60 text-crimson-400 text-xs font-mono">
+                            <span class="w-2 h-2 rounded-full bg-crimson-500 animate-pulse"></span>
+                            <span>리눅스 홈서버에서 직접 운영 중</span>
+                        </div>
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                            서버부터 화면까지,<br><span class="bg-gradient-to-r from-crimson-400 via-crimson-500 to-rose-300 bg-clip-text text-transparent">직접 만들고 직접 운영합니다.</span>
+                        </h1>
+                        <p class="text-slate-300 text-base sm:text-lg max-w-xl leading-relaxed">
+                            노트북 한 대를 리눅스 서버로 바꿔 FastAPI 백엔드, JWT 로그인, 모의 결제까지 붙인 개인 포트폴리오 겸 마켓플레이스입니다.
+                        </p>
+                        <div class="flex flex-wrap gap-4 pt-2">
+                            <button onclick="switchTab('projects')" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-semibold shadow-lg shadow-crimson-900/50 transition flex items-center gap-2">
+                                <i data-lucide="compass" class="w-5 h-5"></i> 마켓플레이스 둘러보기
+                            </button>
+                            <a href="#featured" class="px-6 py-3.5 rounded-xl bg-burgundy-950 hover:bg-burgundy-900 border border-crimson-900/50 text-slate-200 font-medium transition flex items-center gap-2">
+                                <i data-lucide="eye" class="w-5 h-5"></i> 프로젝트 보기
+                            </a>
+                        </div>
+                        <div class="pt-6 border-t border-crimson-900/40 flex flex-wrap items-center gap-3">
+                            <span class="text-xs text-crimson-400 font-mono">스택:</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-burgundy-950 border border-crimson-900/40 text-xs text-slate-300 font-mono">FastAPI / SQLite</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-burgundy-950 border border-crimson-900/40 text-xs text-slate-300 font-mono">JWT Auth</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-burgundy-950 border border-crimson-900/40 text-xs text-slate-300 font-mono">Toss Payments Mock</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-burgundy-950 border border-crimson-900/40 text-xs text-slate-300 font-mono">Ubuntu / Uvicorn</span>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-5">
+                        <div class="rounded-2xl bg-burgundy-950 border border-crimson-900/60 shadow-2xl overflow-hidden">
+                            <div class="bg-[#120306] px-4 py-3 border-b border-crimson-900/50 flex items-center justify-between">
+                                <div class="flex space-x-2">
+                                    <div class="w-3 h-3 rounded-full bg-crimson-600"></div>
+                                    <div class="w-3 h-3 rounded-full bg-amber-600"></div>
+                                    <div class="w-3 h-3 rounded-full bg-emerald-600"></div>
+                                </div>
+                                <span class="text-xs font-mono text-crimson-400">psy_workspace.py</span>
+                            </div>
+                            <div class="p-5 font-mono text-xs sm:text-sm text-slate-300 space-y-2 overflow-x-auto">
+                                <p><span class="text-crimson-400">workspace</span> = {</p>
+                                <p class="pl-4"><span class="text-slate-400">"server"</span>: <span class="text-emerald-400">"HP Victus 15 (Linux)"</span>,</p>
+                                <p class="pl-4"><span class="text-slate-400">"backend"</span>: <span class="text-emerald-400">"FastAPI + Uvicorn"</span>,</p>
+                                <p class="pl-4"><span class="text-slate-400">"db"</span>: <span class="text-emerald-400">"SQLite"</span>,</p>
+                                <p class="pl-4"><span class="text-slate-400">"auth"</span>: <span class="text-emerald-400">"JWT Bearer"</span>,</p>
+                                <p class="pl-4"><span class="text-slate-400">"next"</span>: [<span class="text-amber-300">"SQLAlchemy"</span>, <span class="text-amber-300">"Nginx + LB"</span>, <span class="text-amber-300">"Ollama"</span>]</p>
+                                <p>}</p>
+                                <p class="text-crimson-500"># 다음 목표: 프론트/백 분리, 관리자 앱 등록</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-6 rounded-2xl border border-crimson-900/40">
+                    <p class="text-3xl font-extrabold text-white font-mono">3</p>
+                    <p class="text-xs text-crimson-400 mt-1">진행 중인 프로젝트</p>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl border border-crimson-900/40">
+                    <p class="text-3xl font-extrabold text-crimson-400 font-mono">24/7</p>
+                    <p class="text-xs text-crimson-400 mt-1">리눅스 홈서버 가동</p>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl border border-crimson-900/40">
+                    <p class="text-3xl font-extrabold text-rose-400 font-mono">JWT</p>
+                    <p class="text-xs text-crimson-400 mt-1">토큰 기반 로그인</p>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl border border-crimson-900/40">
+                    <p class="text-3xl font-extrabold text-emerald-400 font-mono">6</p>
+                    <p class="text-xs text-crimson-400 mt-1">다음 단계 로드맵</p>
+                </div>
+            </div>
+
+            <div id="featured" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">주요 프로젝트</h2>
+                        <p class="text-sm text-slate-400">지금 만들고 있거나 운영 중인 프로젝트들입니다.</p>
+                    </div>
+                    <button onclick="switchTab('projects')" class="text-sm text-crimson-400 hover:underline font-medium flex items-center gap-1">
+                        전체 보기 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="home-featured-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+
+        <!-- PROJECTS -->
+        <section id="view-projects" class="space-y-8 hidden animate-fadeIn">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Projects & Assets Marketplace</h1>
+                    <p class="text-sm text-slate-400">Filter by Live Demos (browser access) or Downloadable Builds (.zip / source code).</p>
+                </div>
+                <div class="flex items-center space-x-2 bg-burgundy-950 p-1.5 rounded-xl border border-crimson-900/50">
+                    <button onclick="filterProjects('all')" id="filter-all" class="px-4 py-2 rounded-lg text-xs font-semibold bg-crimson-900 text-white transition">모든 항목</button>
+                    <button onclick="filterProjects('link')" id="filter-link" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">웹 링크 / 라이브 데모</button>
+                    <button onclick="filterProjects('download')" id="filter-download" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">다운로드 빌드 파일</button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between border border-crimson-900/40">
+                <div class="relative w-full sm:w-96">
+                    <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-crimson-400"></i>
+                    <input type="text" id="project-search" oninput="loadProjects()" placeholder="프로젝트 명 검색..." class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-crimson-600 transition">
+                </div>
+                <div class="text-xs text-crimson-400 font-mono" id="project-count-label">Loading...</div>
+            </div>
+
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- MY PAGE -->
+        <section id="view-mypage" class="space-y-8 hidden animate-fadeIn">
+            <div class="glass-panel p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 border border-crimson-900/40">
+                <div class="flex items-center space-x-5">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-crimson-700 to-burgundy-900 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-crimson-900/40">
+                        <span id="mypage-initials"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-3">
+                            <h1 id="mypage-name" class="text-2xl font-bold text-white"></h1>
+                            <span class="px-2.5 py-0.5 rounded-full bg-crimson-950 text-crimson-400 text-xs font-mono border border-crimson-800">JWT VERIFIED</span>
+                        </div>
+                        <p id="mypage-email" class="text-sm text-slate-400 mt-1 font-mono"></p>
+                        <p class="text-xs text-slate-500 mt-1">FastAPI JWT Session Active • Toss Payments Sandbox Verified</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="switchTab('settings')" class="px-4 py-2.5 rounded-xl bg-burgundy-950 hover:bg-burgundy-900 border border-crimson-900/50 text-slate-300 text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="user-cog" class="w-4 h-4"></i> 프로필 설정
+                    </button>
+                    <button onclick="handleLogout()" class="px-4 py-2.5 rounded-xl bg-crimson-950/80 hover:bg-crimson-900 border border-crimson-800 text-rose-300 text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> 로그아웃
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="flex border-b border-crimson-900/40 space-x-8">
+                    <button onclick="switchMyTab('purchased')" id="mytab-purchased" class="pb-3 text-sm font-semibold text-crimson-400 border-b-2 border-crimson-500 transition">보유 중인 프로젝트 및 다운로드</button>
+                    <button onclick="switchMyTab('history')" id="mytab-history" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition">결제 내역 및 영수증</button>
+                </div>
+
+                <div id="mycontent-purchased" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="purchased-assets-grid"></div>
+                </div>
+
+                <div id="mycontent-history" class="hidden space-y-4">
+                    <div class="glass-panel rounded-2xl overflow-hidden border border-crimson-900/40">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-burgundy-950/80 border-b border-crimson-900/40 text-xs font-mono text-crimson-400">
+                                        <th class="p-4">주문 번호 (Order ID)</th>
+                                        <th class="p-4">상품명</th>
+                                        <th class="p-4">결제 수단</th>
+                                        <th class="p-4">금액</th>
+                                        <th class="p-4">결제 일시</th>
+                                        <th class="p-4">상태</th>
+                                        <th class="p-4 text-right">영수증</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payment-history-tbody" class="divide-y divide-crimson-900/20 text-slate-300 font-mono text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="space-y-8 hidden animate-fadeIn">
+            <div>
+                <h1 class="text-3xl font-extrabold text-white tracking-tight">웹사이트 설정</h1>
+                <p class="text-sm text-slate-400">JWT 세션 및 토스페이먼츠 샌드박스 설정.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 space-y-2">
+                    <button class="w-full text-left px-4 py-3 rounded-xl bg-burgundy-950 border border-crimson-900/50 text-crimson-400 font-medium text-sm flex items-center gap-3">
+                        <i data-lucide="sliders" class="w-4 h-4"></i> 일반 환경 설정
+                    </button>
+                    <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-burgundy-950/60 text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center gap-3 transition">
+                        <i data-lucide="bell" class="w-4 h-4"></i> 알림 및 이메일
+                    </button>
+                    <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-burgundy-950/60 text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center gap-3 transition">
+                        <i data-lucide="key" class="w-4 h-4"></i> 토스 페이먼츠 연동 키
+                    </button>
+                    <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-burgundy-950/60 text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center gap-3 transition">
+                        <i data-lucide="database" class="w-4 h-4"></i> 로컬 세션 초기화
+                    </button>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="glass-panel p-6 rounded-2xl space-y-6 border border-crimson-900/40">
+                        <h2 class="text-lg font-bold text-white border-b border-crimson-900/40 pb-4">클라이언트 환경 설정</h2>
+                        <p class="text-sm text-slate-300">현재 백엔드 서버와 안전한 JWT 토큰 방식으로 통신 중입니다.</p>
+
+                        <div class="flex items-center justify-between pt-4 border-t border-crimson-900/30">
+                            <div>
+                                <p class="text-sm font-medium text-slate-200">결제 직후 빌드 파일(.zip) 자동 다운로드</p>
+                                <p class="text-xs text-slate-400">Toss Payments 시뮬레이션 완료 즉시 브라우저에서 다운로드 트리거</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-autodownload" checked class="sr-only peer">
+                                <div class="w-11 h-6 bg-burgundy-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-crimson-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-4 border-t border-crimson-900/30">
+                            <div>
+                                <p class="text-sm font-medium text-slate-200">신규 프로젝트 및 소스코드 출시 알림</p>
+                                <p class="text-xs text-slate-400">새로운 보일러플레이트 등록 시 토스트 알림 수신</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" checked class="sr-only peer">
+                                <div class="w-11 h-6 bg-burgundy-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-crimson-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="pt-4 border-t border-crimson-900/30 space-y-2">
+                            <label class="text-sm font-medium text-slate-200 block">토스페이먼츠 테스트 Client Key (Sandbox)</label>
+                            <div class="flex gap-2">
+                                <input type="text" readonly value="test_ck_crimson_sandbox_dev_77921" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-2.5 text-xs font-mono text-crimson-400">
+                                <button onclick="showToast('토스 테스트 키 클립보드 복사 완료!')" class="px-4 py-2 bg-burgundy-900 hover:bg-burgundy-800 text-xs font-medium rounded-xl text-slate-200 transition">복사</button>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-crimson-900/30 flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-rose-400">로컬 세션 초기화</p>
+                                <p class="text-xs text-slate-400">브라우저에 저장된 JWT 토큰과 사용자 정보를 삭제합니다.</p>
+                            </div>
+                            <button onclick="handleLogout()" class="px-4 py-2 rounded-xl bg-crimson-950 hover:bg-crimson-900 border border-crimson-800 text-xs font-medium text-rose-300 transition">
+                                세션 리셋
+                            </button>
+                        </div>
+
+                        <div class="pt-4 flex justify-end">
+                            <button onclick="showToast('설정이 성공적으로 저장되었습니다.')" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-semibold text-sm transition shadow-lg shadow-crimson-900/40">
+                                설정 저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden animate-fadeIn">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl relative border border-crimson-900/60 shadow-2xl">
+            <button onclick="closeAuthModal()" class="absolute right-6 top-6 text-slate-400 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="text-center space-y-2 mb-8">
+                <div class="w-12 h-12 rounded-2xl bg-crimson-950 border border-crimson-800 text-crimson-400 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="lock" class="w-6 h-6"></i>
+                </div>
+                <h2 id="auth-title" class="text-2xl font-bold text-white tracking-tight">계정 로그인</h2>
+                <p id="auth-subtitle" class="text-xs text-slate-400">FastAPI 백엔드 세션 연동</p>
+            </div>
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div id="auth-name-field" class="space-y-1.5 hidden">
+                    <label class="text-xs font-mono text-crimson-400">이름 / 닉네임</label>
+                    <input type="text" id="input-name" placeholder="홍길동" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-mono text-crimson-400">이메일 주소</label>
+                    <input type="email" id="input-email" required placeholder="developer@example.com" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-mono text-crimson-400">비밀번호</label>
+                    <input type="password" id="input-password" required placeholder="••••••••" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm transition shadow-lg shadow-crimson-900/50 mt-2">로그인 하기</button>
+            </form>
+            <div class="mt-6 text-center text-xs text-slate-400">
+                <span id="auth-switch-text">계정이 없으신가요?</span>
+                <button onclick="toggleAuthMode()" id="auth-switch-btn" class="text-crimson-400 font-semibold ml-1 hover:underline">회원가입</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden animate-fadeIn p-4">
+        <div class="glass-panel w-full max-w-2xl p-6 sm:p-8 rounded-3xl relative border border-crimson-900/60 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button onclick="closeDetailModal()" class="absolute right-6 top-6 text-slate-400 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div id="detail-modal-content" class="space-y-6"></div>
+        </div>
+    </div>
+
+    <!-- TOSS PAYMENTS MODAL -->
+    <div id="toss-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md hidden animate-fadeIn p-4">
+        <div class="bg-white text-slate-900 w-full max-w-md p-8 rounded-3xl relative shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center space-x-2">
+                    <span class="font-extrabold text-crimson-700 text-lg tracking-tight">TOSS PAYMENTS</span>
+                    <span class="text-xs bg-crimson-50 text-crimson-700 px-2 py-0.5 rounded font-mono">SANDBOX</span>
+                </div>
+                <button onclick="closeTossModal()" class="text-slate-400 hover:text-slate-700 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <p class="text-xs text-slate-500 font-mono">주문 상품명</p>
+                <h3 id="toss-product-title" class="text-lg font-bold text-slate-900">상품명</h3>
+                <div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
+                    <span class="text-sm text-slate-600">총 결제 금액</span>
+                    <span id="toss-product-price" class="text-xl font-extrabold text-crimson-700">₩0</span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-700">결제 수단 선택</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="selectTossMethod(this)" class="toss-method-btn p-3 rounded-xl border-2 border-crimson-600 bg-crimson-50/50 text-xs font-semibold text-crimson-700 text-center transition">신용카드</button>
+                    <button onclick="selectTossMethod(this)" class="toss-method-btn p-3 rounded-xl border-2 border-slate-200 text-xs font-semibold text-slate-600 text-center transition">가상계좌</button>
+                    <button onclick="selectTossMethod(this)" class="toss-method-btn p-3 rounded-xl border-2 border-slate-200 text-xs font-semibold text-slate-600 text-center transition">간편결제</button>
+                </div>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+                <span>토스페이먼츠 시뮬레이션 환경입니다. 실제 과금되지 않는 테스트 결제입니다.</span>
+            </div>
+
+            <button onclick="processTossPayment()" class="w-full py-4 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition flex items-center justify-center gap-2">
+                <i data-lucide="lock" class="w-4 h-4"></i> 결제 승인 및 소유권 획득 (Toss)
+            </button>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-crimson-900/40 mt-20 py-12 text-slate-400 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-crimson-700 flex items-center justify-center text-white font-bold">
+                    <i data-lucide="code" class="w-4 h-4"></i>
+                </div>
+                <span class="font-bold text-slate-200">PsyStore Portfolio & Marketplace</span>
+            </div>
+            <p class="text-xs text-slate-500 font-mono">© 2026 Psy. All rights reserved. Powered by FastAPI & Toss Payments.</p>
+            <div class="flex space-x-6 text-xs">
+                <a href="#" class="hover:text-crimson-400 transition">Privacy Policy</a>
+                <a href="#" class="hover:text-crimson-400 transition">Terms of Service</a>
+                <a href="#" class="hover:text-crimson-400 transition">API Docs</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- REAL API JAVASCRIPT LOGIC -->
+    <script>
+        let projectsData = [];
+        let currentFilter = 'all';
+        let currentAuthMode = 'login';
+        let selectedProductForCheckout = null;
+
+        // JWT Token & User Info State from localStorage
+        let authToken = localStorage.getItem('crimson_token') || null;
+        let currentUser = JSON.parse(localStorage.getItem('crimson_user')) || null;
+
+        window.onload = function() {
+            lucide.createIcons();
+            const hashTab = location.hash.slice(1);
+            const initialTab = TABS.includes(hashTab) ? hashTab : 'home';
+            history.replaceState(null, '', `#${initialTab}`);
+            showTab(initialTab);
+            if(initialTab !== 'projects') loadProjects(); // projects면 showTab에서 이미 조회함
+            updateAuthUI();
+        };
+
+        // --- API: 인증 요청 공통 처리 ---
+        // 토큰 만료/위조로 401이 오면 로그인 상태를 정리 (병렬 요청 중복 로그아웃은 authToken 체크로 방지)
+        async function authFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: { ...options.headers, 'Authorization': `Bearer ${authToken}` }
+            });
+            if(res.status === 401 && authToken) handleLogout('세션이 만료되었습니다. 다시 로그인해주세요.');
+            return res;
+        }
+
+        // --- API: Load Projects ---
+        async function loadProjects() {
+            const searchQuery = document.getElementById('project-search')?.value || '';
+            let url = `/api/projects?category=${currentFilter}`;
+            if(searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+            if(currentUser && currentUser.email) url += `&user_email=${encodeURIComponent(currentUser.email)}`;
+
+            try {
+                const res = await fetch(url);
+                projectsData = await res.json();
+                renderHomeFeatured();
+                renderProjectsGrid();
+                if(authToken) {
+                    loadUserAssets();
+                    loadPaymentHistory();
+                }
+            } catch (err) {
+                console.error("Failed to load projects:", err);
+            }
+        }
+
+        // --- RENDERERS ---
+        function renderHomeFeatured() {
+            const container = document.getElementById('home-featured-grid');
+            if(!container) return;
+            const featured = projectsData.slice(0, 3);
+            container.innerHTML = featured.map(p => createProjectCardHTML(p)).join('');
+            lucide.createIcons();
+        }
+
+        function renderProjectsGrid() {
+            const container = document.getElementById('projects-grid');
+            if(!container) return;
+            document.getElementById('project-count-label').innerText = `Total ${projectsData.length} items found`;
+
+            if(projectsData.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500 font-mono">검색 결과가 없습니다.</div>`;
+                return;
+            }
+            container.innerHTML = projectsData.map(p => createProjectCardHTML(p)).join('');
+            lucide.createIcons();
+        }
+
+        function createProjectCardHTML(p) {
+            const isDownload = p.category === 'download';
+            return `
+                <div class="glass-panel rounded-3xl overflow-hidden border border-crimson-900/40 hover:border-crimson-700/60 transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <div class="h-40 bg-gradient-to-tr ${p.imageGradient} p-6 relative flex items-end">
+                            <span class="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-xs font-mono text-slate-200 border border-crimson-500/20">${p.badge}</span>
+                            <div class="flex items-center space-x-2 text-xs font-mono text-white/80">
+                                <i data-lucide="${isDownload ? 'download-cloud' : 'globe'}" class="w-4 h-4 text-crimson-400"></i>
+                                <span>${isDownload ? 'Downloadable Build' : 'Live Browser Link'}</span>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <h3 onclick="openDetailModal(${p.id})" class="text-lg font-bold text-white group-hover:text-crimson-400 transition cursor-pointer">${p.title}</h3>
+                            <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${p.description}</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${p.techStack.map(t => `<span class="px-2 py-0.5 rounded bg-burgundy-950 border border-crimson-900/40 text-[11px] font-mono text-slate-300">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0 flex items-center justify-between border-t border-crimson-900/30 mt-4">
+                        <div>
+                            <span class="text-xs text-slate-500 font-mono block">PRICE</span>
+                            <span class="text-base font-extrabold text-white font-mono">${p.priceFormatted}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openDetailModal(${p.id})" class="px-3.5 py-2 rounded-xl bg-burgundy-950 hover:bg-burgundy-900 text-xs font-medium text-slate-300 border border-crimson-900/40 transition">상세보기</button>
+                            ${!p.purchased ?
+                                `<button onclick="initiateCheckout(${p.id})" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 text-white text-xs font-bold transition flex items-center gap-1 shadow-md shadow-crimson-900/40"><i data-lucide="credit-card" class="w-3.5 h-3.5"></i> 구매하기</button>` :
+                                (isDownload ?
+                                    `<button onclick="triggerDownload('${p.title}')" class="px-3.5 py-2 rounded-xl bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/80 text-xs font-bold transition flex items-center gap-1 border border-emerald-800/40"><i data-lucide="download" class="w-3.5 h-3.5"></i> 다운로드</button>` :
+                                    `<a href="${p.demoUrl}" target="_blank" class="px-3.5 py-2 rounded-xl bg-crimson-950 text-crimson-400 hover:bg-crimson-900 text-xs font-bold transition flex items-center gap-1 border border-crimson-800/50"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> 라이브 보기</a>`
+                                )
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- API: Load User Assets ---
+        async function loadUserAssets() {
+            if(!authToken) return;
+            try {
+                const res = await authFetch('/api/user/assets');
+                if(res.ok) {
+                    const assets = await res.json();
+                    const container = document.getElementById('purchased-assets-grid');
+                    if(!container) return;
+                    if(assets.length === 0) {
+                        container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 font-mono">보유 중인 항목이 없습니다.</div>`;
+                        return;
+                    }
+                    container.innerHTML = assets.map(a => {
+                        const description = projectsData.find(p => p.id === a.id)?.description || '';
+                        return `
+                        <div class="glass-panel p-6 rounded-3xl border border-crimson-900/40 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2.5 py-1 rounded-full bg-crimson-950 text-crimson-400 text-xs font-mono border border-crimson-800">ENTITLEMENT VERIFIED</span>
+                                <span class="text-xs text-slate-400 font-mono">v2.5.0</span>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white">${a.title}</h3>
+                                <p class="text-xs text-slate-400 mt-1 line-clamp-2">${description}</p>
+                            </div>
+                            <div class="pt-4 border-t border-crimson-900/30 flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-mono">JWT Session Verified</span>
+                                <div class="flex gap-2">
+                                    ${a.category === 'download' ?
+                                        `<button onclick="triggerDownload('${a.title}')" class="px-4 py-2 rounded-xl bg-crimson-600 text-white text-xs font-bold hover:bg-crimson-500 transition flex items-center gap-1.5 shadow-lg shadow-crimson-900/40"><i data-lucide="download" class="w-3.5 h-3.5"></i> 빌드 다운로드</button>` :
+                                        `<a href="${a.demoUrl}" target="_blank" class="px-4 py-2 rounded-xl bg-burgundy-950 text-crimson-400 text-xs font-bold hover:bg-burgundy-900 transition flex items-center gap-1.5 border border-crimson-800/50"><i data-lucide="globe" class="w-3.5 h-3.5"></i> 링크 접속</a>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                    lucide.createIcons();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // --- API: Load Payment History ---
+        async function loadPaymentHistory() {
+            if(!authToken) return;
+            try {
+                const res = await authFetch('/api/user/history');
+                if(res.ok) {
+                    const history = await res.json();
+                    const tbody = document.getElementById('payment-history-tbody');
+                    if(!tbody) return;
+                    if(history.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">결제 내역이 없습니다.</td></tr>`;
+                        return;
+                    }
+                    tbody.innerHTML = history.map(h => `
+                        <tr class="hover:bg-burgundy-950/40 transition">
+                            <td class="p-4 text-crimson-400">${h.orderId}</td>
+                            <td class="p-4 text-slate-200 font-sans">${h.title}</td>
+                            <td class="p-4 text-slate-400">${h.method}</td>
+                            <td class="p-4 text-white font-bold">${h.amount}</td>
+                            <td class="p-4 text-slate-400">${h.date}</td>
+                            <td class="p-4"><span class="px-2 py-0.5 rounded bg-crimson-950 text-crimson-400 border border-crimson-800">${h.status}</span></td>
+                            <td class="p-4 text-right">
+                                <button onclick="showToast('${h.orderId} 전자 영수증 다운로드 완료')" class="px-3 py-1 rounded bg-burgundy-950 hover:bg-burgundy-900 text-xs text-slate-200 border border-crimson-900/40 transition">영수증</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch(err) { console.error(err); }
+        }
+
+        // --- TABS & FILTERS ---
+        const TABS = ['home', 'projects', 'mypage', 'settings'];
+        const NAV_ACTIVE = ['text-white', 'bg-crimson-900/80', 'shadow-sm', 'border', 'border-crimson-700/50'];
+        const NAV_INACTIVE = ['text-slate-400', 'hover:text-slate-200'];
+
+        // 탭 이동은 URL 해시(#projects 등)로 처리 → 뒤로가기 / 새로고침 / 링크 공유 지원
+        function switchTab(tabId) {
+            if(location.hash === `#${tabId}`) showTab(tabId); // 같은 탭 재클릭 시 hashchange가 안 일어나므로 직접 호출
+            else location.hash = tabId;
+        }
+
+        function showTab(tabId) {
+            // 비로그인 상태에서 #mypage 접근(뒤로가기, URL 직접 입력 등) 시 홈으로 돌리고 로그인 유도
+            if(tabId === 'mypage' && !authToken) {
+                history.replaceState(null, '', '#home');
+                showTab('home');
+                openAuthModal('login');
+                return;
+            }
+            TABS.forEach(id => {
+                const isActive = id === tabId;
+                document.getElementById(`view-${id}`).classList.toggle('hidden', !isActive);
+                const btn = document.getElementById(`nav-${id}`);
+                if(btn) {
+                    btn.classList.remove(...(isActive ? NAV_INACTIVE : NAV_ACTIVE));
+                    btn.classList.add(...(isActive ? NAV_ACTIVE : NAV_INACTIVE));
+                }
+            });
+            if(tabId === 'projects') loadProjects(); // 탭 진입 시마다 서버에서 최신 목록 조회
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        window.addEventListener('hashchange', () => {
+            const tabId = location.hash.slice(1);
+            if(TABS.includes(tabId)) showTab(tabId); // #featured 같은 일반 앵커는 무시
+        });
+
+        function switchMyTab(subTab) {
+            if(subTab === 'purchased') {
+                document.getElementById('mycontent-purchased').classList.remove('hidden');
+                document.getElementById('mycontent-history').classList.add('hidden');
+                document.getElementById('mytab-purchased').className = "pb-3 text-sm font-semibold text-crimson-400 border-b-2 border-crimson-500 transition";
+                document.getElementById('mytab-history').className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition";
+            } else {
+                document.getElementById('mycontent-purchased').classList.add('hidden');
+                document.getElementById('mycontent-history').classList.remove('hidden');
+                document.getElementById('mytab-history').className = "pb-3 text-sm font-semibold text-crimson-400 border-b-2 border-crimson-500 transition";
+                document.getElementById('mytab-purchased').className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition";
+            }
+        }
+
+        function filterProjects(cat) {
+            currentFilter = cat;
+            ['all', 'link', 'download'].forEach(c => {
+                const btn = document.getElementById(`filter-${c}`);
+                if(btn) btn.className = c === cat ? "px-4 py-2 rounded-lg text-xs font-semibold bg-crimson-900 text-white transition" : "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+            });
+            loadProjects();
+        }
+
+        // --- AUTH & SUBMITS ---
+        function openAuthModal(mode) {
+            currentAuthMode = mode;
+            document.getElementById('auth-modal').classList.remove('hidden');
+            if(mode === 'signup') {
+                document.getElementById('auth-title').innerText = '신규 계정 회원가입';
+                document.getElementById('auth-subtitle').innerText = '신규 계정을 등록하고 마이페이지 권한을 활성화하세요.';
+                document.getElementById('auth-name-field').classList.remove('hidden');
+                document.getElementById('auth-submit-btn').innerText = '회원가입 완료';
+                document.getElementById('auth-switch-text').innerText = '이미 계정이 있으신가요?';
+                document.getElementById('auth-switch-btn').innerText = '로그인';
+            } else {
+                document.getElementById('auth-title').innerText = '계정 로그인';
+                document.getElementById('auth-subtitle').innerText = 'FastAPI 백엔드 세션 연동';
+                document.getElementById('auth-name-field').classList.add('hidden');
+                document.getElementById('auth-submit-btn').innerText = '로그인 하기';
+                document.getElementById('auth-switch-text').innerText = '계정이 없으신가요?';
+                document.getElementById('auth-switch-btn').innerText = '회원가입';
+            }
+        }
+        function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+        function toggleAuthMode() { openAuthModal(currentAuthMode === 'login' ? 'signup' : 'login'); }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('input-email').value;
+            const password = document.getElementById('input-password').value;
+            const name = document.getElementById('input-name').value || "User";
+
+            if(currentAuthMode === 'signup') {
+                try {
+                    const res = await fetch('/api/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, password })
+                    });
+                    const data = await res.json();
+                    if(!res.ok) throw new Error(data.detail);
+                    showToast("회원가입 성공! 로그인해주세요.");
+                    toggleAuthMode();
+                } catch(err) { showToast(err.message); }
+            } else {
+                try {
+                    const res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    if(!res.ok) throw new Error(data.detail);
+
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('crimson_token', authToken);
+                    localStorage.setItem('crimson_user', JSON.stringify(currentUser));
+
+                    updateAuthUI();
+                    closeAuthModal();
+                    loadProjects();
+                    showToast(data.message);
+                } catch(err) { showToast(err.message); }
+            }
+        }
+
+        function handleLogout(message = '로그아웃 되었습니다.') {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('crimson_token');
+            localStorage.removeItem('crimson_user');
+            clearUserData();
+            updateAuthUI();
+            loadProjects(); // 비로그인 기준 purchased 값으로 목록 갱신
+            switchTab('home');
+            showToast(message);
+        }
+
+        // 마이페이지에 렌더링된 이전 사용자 정보 / 보유 자산 / 결제 내역 제거
+        function clearUserData() {
+            document.getElementById('mypage-name').innerText = '';
+            document.getElementById('mypage-email').innerText = '';
+            document.getElementById('mypage-initials').innerText = '';
+            document.getElementById('purchased-assets-grid').innerHTML = '';
+            document.getElementById('payment-history-tbody').innerHTML = '';
+        }
+
+        function updateAuthUI() {
+            const container = document.getElementById('auth-container');
+            if(!container) return;
+            if(authToken && currentUser) {
+                container.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <button onclick="switchTab('mypage')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-burgundy-950 border border-crimson-900/50 text-xs font-medium text-slate-200 hover:bg-burgundy-900 transition">
+                            <div class="w-6 h-6 rounded-lg bg-crimson-700 text-white font-bold flex items-center justify-center text-[11px]">${currentUser.name.slice(0,2).toUpperCase()}</div>
+                            <span class="hidden sm:inline">${currentUser.name}</span>
+                        </button>
+                    </div>
+                `;
+                document.getElementById('mypage-name').innerText = currentUser.name;
+                document.getElementById('mypage-email').innerText = currentUser.email;
+                document.getElementById('mypage-initials').innerText = currentUser.name.slice(0,2).toUpperCase();
+            } else {
+                container.innerHTML = `
+                    <button onclick="openAuthModal('login')" class="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition">로그인</button>
+                    <button onclick="openAuthModal('signup')" class="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 text-white font-semibold shadow-lg shadow-crimson-900/40 transition">회원가입</button>
+                `;
+            }
+        }
+
+        // --- CHECKOUT & TOSS SIMULATION ---
+        function openDetailModal(id) {
+            const p = projectsData.find(item => item.id === id);
+            if(!p) return;
+            selectedProductForCheckout = p;
+            document.getElementById('detail-modal-content').innerHTML = `
+                <div class="flex items-center justify-between border-b border-crimson-900/40 pb-4">
+                    <div>
+                        <span class="px-2.5 py-1 rounded-full bg-crimson-950 text-crimson-400 text-xs font-mono border border-crimson-800">${p.badge}</span>
+                        <h2 class="text-2xl font-bold text-white mt-2">${p.title}</h2>
+                    </div>
+                    <span class="text-2xl font-extrabold text-white font-mono">${p.priceFormatted}</span>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">${p.description}</p>
+                <div class="space-y-2">
+                    <h4 class="text-xs font-mono text-crimson-400">TECHNOLOGY STACK</h4>
+                    <div class="flex flex-wrap gap-2">
+                        ${p.techStack.map(t => `<span class="px-3 py-1 rounded-lg bg-burgundy-950 border border-crimson-900/40 text-xs font-mono text-slate-300">${t}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="bg-burgundy-950 p-4 rounded-2xl border border-crimson-900/40 space-y-2">
+                    <div class="flex justify-between text-xs font-mono text-slate-400">
+                        <span>다운로드 / 접속 횟수: ${p.downloadsCount}회</span>
+                        <span>사용자 평점: ⭐ ${p.rating}/5.0</span>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button onclick="closeDetailModal()" class="px-5 py-2.5 rounded-xl bg-burgundy-950 hover:bg-burgundy-900 text-slate-300 text-sm font-medium transition border border-crimson-900/40">닫기</button>
+                    ${!p.purchased ?
+                        `<button onclick="closeDetailModal(); initiateCheckout(${p.id});" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 text-white text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-crimson-900/50"><i data-lucide="credit-card" class="w-4 h-4"></i> 토스페이먼츠 결제하기</button>` :
+                        (p.category === 'download' ?
+                            `<button onclick="triggerDownload('${p.title}')" class="px-6 py-2.5 rounded-xl bg-emerald-700 text-white text-sm font-bold hover:bg-emerald-600 transition flex items-center gap-2 shadow-lg shadow-emerald-900/30"><i data-lucide="download" class="w-4 h-4"></i> 빌드 파일 다운로드</button>` :
+                            `<a href="${p.demoUrl}" target="_blank" class="px-6 py-2.5 rounded-xl bg-crimson-950 text-crimson-400 text-sm font-bold hover:bg-crimson-900 transition flex items-center gap-2 border border-crimson-800/50"><i data-lucide="external-link" class="w-4 h-4"></i> 라이브 웹 링크 방문</a>`
+                        )
+                    }
+                </div>
+            `;
+            document.getElementById('detail-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeDetailModal() { document.getElementById('detail-modal').classList.add('hidden'); }
+
+        function initiateCheckout(id) {
+            if(!authToken) {
+                showToast("로그인이 필요한 서비스입니다.");
+                openAuthModal('login');
+                return;
+            }
+            const p = projectsData.find(item => item.id === id);
+            if(!p) return;
+            selectedProductForCheckout = p;
+            document.getElementById('toss-product-title').innerText = p.title;
+            document.getElementById('toss-product-price').innerText = p.priceFormatted;
+            document.getElementById('toss-modal').classList.remove('hidden');
+        }
+        function closeTossModal() { document.getElementById('toss-modal').classList.add('hidden'); }
+
+        function selectTossMethod(btn) {
+            document.querySelectorAll('.toss-method-btn').forEach(b => {
+                b.className = "toss-method-btn p-3 rounded-xl border-2 border-slate-200 text-xs font-semibold text-slate-600 text-center transition";
+            });
+            btn.className = "toss-method-btn p-3 rounded-xl border-2 border-crimson-600 bg-crimson-50/50 text-xs font-semibold text-crimson-700 text-center transition";
+        }
+
+        async function processTossPayment() {
+            if(!selectedProductForCheckout || !authToken) return;
+            const orderId = "ORD-2026-" + Math.floor(1000 + Math.random() * 9000);
+            
+            try {
+                const res = await authFetch('/api/payment/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_id: selectedProductForCheckout.id,
+                        order_id: orderId,
+                        method: "토스페이먼츠 (시뮬레이션)",
+                        amount: selectedProductForCheckout.price
+                    })
+                });
+
+                
+                if(res.status === 401) { closeTossModal(); return; } // 로그아웃 처리는 authFetch에서 완료
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.detail);
+
+                closeTossModal();
+                showToast("🎉 결제 및 소유권 승인 완료!");
+                loadProjects();
+                switchTab('mypage');
+            } catch(err) {
+                showToast(err.message);
+            }
+        }
+
+        function triggerDownload(title) {
+            showToast(`📦 [${title}] 빌드 아카이브 파일 다운로드 시작`);
+            const element = document.createElement('a');
+            const file = new Blob([`=== PSYSTORE BUILD ASSET ===\nProject: ${title}\nUser Session Verified`], {type: 'text/plain'});
+            element.href = URL.createObjectURL(file);
+            element.download = `${title.toLowerCase().replace(/\s+/g, '-')}-build.zip`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = "glass-panel px-5 py-3 rounded-2xl text-xs text-slate-100 border border-crimson-800 shadow-2xl animate-bounce flex items-center gap-3 pointer-events-auto bg-[#1e0509]";
+            toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-crimson-500"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 3500);
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
