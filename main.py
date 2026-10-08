@@ -165,6 +165,22 @@ def get_current_user(authorization: Optional[str] = Header(None)):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
+def get_admin_user(current_user : str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT role FROM users WHERE email = ?
+    """, (current_user,))
+    role = cursor.fetchone()
+    if not role:
+        conn.close()
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    if role[0] != "admin":
+        conn.close()
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
+    conn.close()
+    return current_user
+
 # ==========================================
 # 📡 1. 사용자 인증 및 세션 관리 API (/api/auth)
 # ==========================================
@@ -292,6 +308,44 @@ def get_project_detail(project_id: int):
         raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     return {"id": row[0], "title": row[1], "category": row[2], "price": row[3]}
 
+
+class ProjectCreate(BaseModel):
+    title : str
+    category : str
+    price : int
+    badge : str
+    description : str
+    download_url : Optional[str] = None
+    demo_url : Optional[str] = None
+    image_gradient : Optional[str] = None
+    tech_stack : List[str]
+
+@app.post("/api/projects", status_code=201)
+def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user)):
+    if req.category not in ("link", "download") or req.price < 0:
+        raise HTTPException(status_code=400, detail="잘못된 값을 기입하였습니다.")
+    price_formatted = "Free" if req.price == 0 else f"₩{req.price:,}"
+    
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    try:
+        
+        cursor.execute("""
+            INSERT INTO projects (title, category, price, price_formatted, badge, description, download_url, demo_url, image_gradient)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (req.title, req.category, req.price, price_formatted, req.badge, req.description, req.download_url, req.demo_url, req.image_gradient))
+
+        new_id = cursor.lastrowid
+        cursor.executemany("INSERT INTO project_tech_stacks (project_id, tech_name) VALUES (?, ?)", [(new_id, t) for t in req.tech_stack])
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail="프로젝트 등록 중 오류 발생!")
+    finally:
+        conn.close()
+    return {"message": "프로젝트 등록 성공!", "id" : new_id}
+
+
 # ==========================================
 # 👤 3. 마이페이지 및 보유 자산 API (/api/user)
 # ==========================================
@@ -312,21 +366,6 @@ def get_user_assets(current_user: str = Depends(get_current_user)):
     assets = [{"id": r[0], "title": r[1], "category": r[2], "downloadUrl": r[3], "demoUrl": r[4], "badge": r[5]} for r in rows]
     return assets
 
-def get_admin_user(current_user : str = Depends(get_current_user)):
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT role FROM users WHERE email = ?
-    """, (current_user,))
-    role = cursor.fetchone()
-    if not role:
-        conn.close()
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-    if role[0] != "admin":
-        conn.close()
-        raise HTTPException(status_code=403, detail="권한이 없습니다.")
-    conn.close()
-    return current_user
 
 @app.get("/api/user/history")
 def get_payment_history(current_user: str = Depends(get_current_user)):
