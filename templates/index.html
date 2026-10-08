@@ -414,7 +414,7 @@
                 <span>토스페이먼츠 시뮬레이션 환경입니다. 실제 과금되지 않는 테스트 결제입니다.</span>
             </div>
 
-            <button onclick="processTossPayment()" class="w-full py-4 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition flex items-center justify-center gap-2">
+            <button id="toss-pay-btn" onclick="processTossPayment()" class="w-full py-4 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm shadow-lg shadow-crimson-600/30 transition flex items-center justify-center gap-2">
                 <i data-lucide="lock" class="w-4 h-4"></i> 결제 승인 및 소유권 획득 (Toss)
             </button>
         </div>
@@ -446,6 +446,7 @@
         let currentFilter = 'all';
         let currentAuthMode = 'login';
         let selectedProductForCheckout = null;
+        let currentOrderId = null;
 
         // JWT Token & User Info State from localStorage
         let authToken = localStorage.getItem('crimson_token') || null;
@@ -849,6 +850,7 @@
             selectedProductForCheckout = p;
             document.getElementById('toss-product-title').innerText = p.title;
             document.getElementById('toss-product-price').innerText = p.priceFormatted;
+            currentOrderId = "ORD-" + crypto.randomUUID();
             document.getElementById('toss-modal').classList.remove('hidden');
         }
         function closeTossModal() { document.getElementById('toss-modal').classList.add('hidden'); }
@@ -862,7 +864,10 @@
 
         async function processTossPayment() {
             if(!selectedProductForCheckout || !authToken) return;
-            const orderId = "ORD-2026-" + Math.floor(1000 + Math.random() * 9000);
+            const btn = document.getElementById('toss-pay-btn');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '결제 처리 중...';
             
             try {
                 const res = await authFetch('/api/payment/checkout', {
@@ -870,13 +875,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         project_id: selectedProductForCheckout.id,
-                        order_id: orderId,
+                        order_id: currentOrderId,
                         method: "토스페이먼츠 (시뮬레이션)",
                         amount: selectedProductForCheckout.price
                     })
                 });
 
-                
                 if(res.status === 401) { closeTossModal(); return; } // 로그아웃 처리는 authFetch에서 완료
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.detail);
@@ -887,6 +891,9 @@
                 switchTab('mypage');
             } catch(err) {
                 showToast(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML= originalHTML;
             }
         }
 

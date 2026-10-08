@@ -312,6 +312,22 @@ def get_user_assets(current_user: str = Depends(get_current_user)):
     assets = [{"id": r[0], "title": r[1], "category": r[2], "downloadUrl": r[3], "demoUrl": r[4], "badge": r[5]} for r in rows]
     return assets
 
+def get_admin_user(current_user : str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT role FROM users WHERE email = ?
+    """, (current_user,))
+    role = cursor.fetchone()
+    if not role:
+        conn.close()
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    if role[0] != "admin":
+        conn.close()
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
+    conn.close()
+    return current_user
+
 @app.get("/api/user/history")
 def get_payment_history(current_user: str = Depends(get_current_user)):
     conn = sqlite3.connect("database.db")
