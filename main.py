@@ -27,16 +27,26 @@ def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     
-    # 1. users 테이블 (role 제거, 이메일 인증 여부 추가)
+    # 1. users 테이블 (이메일 인증 여부 추가)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            is_verified INTEGER DEFAULT 0
+            is_verified INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'user'
         )
     """)
+    #TODO: 기존 DB에 role컬럼이 없으면 ALTER TABLE로 추가
+    cursor.execute(""" PRAGMA table_info(users)""")
+    has_role = False
+    for t in cursor.fetchall():
+        if t[1] == 'role':
+            has_role = True
+    
+    if not has_role:
+        cursor.execute(""" ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user' """)
     
     # 2. projects 테이블 (상품 기본 정보)
     cursor.execute("""
@@ -99,6 +109,7 @@ def init_db():
 def startup_event():
     init_db()
     seed_default_projects()
+    
 
 def seed_default_projects():
     """서버 최초 기동 시 프론트엔드가 요구하는 기본 프로젝트 데이터가 없으면 주입"""
@@ -349,19 +360,24 @@ def checkout(req: CheckoutRequest, current_user: str = Depends(get_current_user)
             
     try:
         
+        
+        # 4. 소유권(entitlements) 테이블에 권한 부여 (중복 방지 IGNORE)
+        cursor.execute("""
+            INSERT INTO entitlements (user_email, project_id, granted_at)
+            VALUES (?, ?, ?)
+        """, (current_user, req.project_id, now_str))
+
         # 3. 결제 이력 기록
         cursor.execute("""
             INSERT INTO payment_history (user_email, project_id, order_id, method, amount, date, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (current_user, req.project_id, req.order_id, req.method, proj[2], now_str, "결제 완료"))
         
-        # 4. 소유권(entitlements) 테이블에 권한 부여 (중복 방지 IGNORE)
-        cursor.execute("""
-            INSERT OR IGNORE INTO entitlements (user_email, project_id, granted_at)
-            VALUES (?, ?, ?)
-        """, (current_user, req.project_id, now_str))
 
         conn.commit()
+    except sqlite3.IntegrityError as e:
+        conn.rollback()
+        raise HTTPException(status_code=409, detail="이미 보유한 상품입니다!")
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"결제 처리 중 오류 발생: {str(e)}")
