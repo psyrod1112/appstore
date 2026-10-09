@@ -218,7 +218,7 @@ def login(req: LoginRequest):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     hashed_pw = hash_password(req.password)
-    cursor.execute("SELECT name, email FROM users WHERE email = ? AND password = ?", (req.email, hashed_pw))
+    cursor.execute("SELECT name, email, role FROM users WHERE email = ? AND password = ? ", (req.email, hashed_pw))
     user = cursor.fetchone()
     conn.close()
 
@@ -236,7 +236,7 @@ def login(req: LoginRequest):
     return {
         "message": f"환영합니다, {user[0]}님 🚀",
         "token": token,
-        "user": {"name": user[0], "email": user[1]}
+        "user": {"name": user[0], "email": user[1], "role" : user[2]}
     }
 
 # ==========================================
@@ -343,7 +343,7 @@ def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user
         raise HTTPException(status_code=500, detail="프로젝트 등록 중 오류 발생!")
     finally:
         conn.close()
-    return {"message": "프로젝트 등록 성공!", "id" : new_id}
+    return {"message": "프로젝트 등록 성공", "id" : new_id}
 
 
 # ==========================================

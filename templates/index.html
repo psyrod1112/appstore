@@ -179,14 +179,18 @@
                 <div>
                     <h1 class="text-3xl font-extrabold text-white tracking-tight">Projects & Assets Marketplace</h1>
                     <p class="text-sm text-slate-400">Filter by Live Demos (browser access) or Downloadable Builds (.zip / source code).</p>
+                    <button id="admin-upload-btn" onclick="openUploadModal()" class="hidden mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 text-white shadow-lg shadow-crimson-900/40 transition">
+                        <i data-lucide="upload" class="w-4 h-4"></i> 프로젝트 업로드
+                    </button>
+
                 </div>
+
                 <div class="flex items-center space-x-2 bg-burgundy-950 p-1.5 rounded-xl border border-crimson-900/50">
                     <button onclick="filterProjects('all')" id="filter-all" class="px-4 py-2 rounded-lg text-xs font-semibold bg-crimson-900 text-white transition">모든 항목</button>
                     <button onclick="filterProjects('link')" id="filter-link" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">웹 링크 / 라이브 데모</button>
                     <button onclick="filterProjects('download')" id="filter-download" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">다운로드 빌드 파일</button>
                 </div>
             </div>
-
             <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between border border-crimson-900/40">
                 <div class="relative w-full sm:w-96">
                     <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-crimson-400"></i>
@@ -367,6 +371,58 @@
                 <span id="auth-switch-text">계정이 없으신가요?</span>
                 <button onclick="toggleAuthMode()" id="auth-switch-btn" class="text-crimson-400 font-semibold ml-1 hover:underline">회원가입</button>
             </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div id="upload-modal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div class="glass-panel w-full max-w-lg p-8 rounded-3xl relative border border-crimson-900/60 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeUploadModal()" class="absolute right-6 top-6 text-slate-400 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="text-center space-y-2 mb-8">
+                <div class="w-12 h-12 rounded-2xl bg-crimson-950 border border-crimson-800 text-crimson-400 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="upload" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">프로젝트 업로드</h2>
+            </div>
+            <form onsubmit="handleUploadSubmit(event)" class="space-y-4">
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">제목</label>
+                    <input type="text" id="upload-title" required placeholder="Agar.io 클론게임" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-mono text-crimson-400">카테고리</label>
+                    <select id="upload-category" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                        <option value="link">웹 링크 / 라이브 데모</option>
+                        <option value="download">다운로드 빌드 파일</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">가격 (원)</label>
+                    <input type="number" id="upload-price" required placeholder="0 (무료)" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">뱃지</label>
+                    <input type="text" id="upload-badge" required placeholder="라이브 데모" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-mono text-crimson-400">설명</label>
+                    <textarea id="upload-description" rows="3" required class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600"></textarea>
+                </div>
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">데모 URL</label>
+                    <input type="url" id="upload-demo-url" placeholder="https://..." class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">다운로드 URL</label>
+                    <input type="text" id="upload-download-url" placeholder="(나중에 R2로 대체)" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                <div class="space-y-1.5 ">
+                    <label class="text-xs font-mono text-crimson-400">기술 스택</label>
+                    <input type="text" id="upload-tech" required placeholder="Python, FastAPI, Docker" class="w-full bg-burgundy-950 border border-crimson-900/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-crimson-600">
+                </div>
+                
+                <button type="submit" id="upload-submit-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 hover:to-crimson-600 text-white font-bold text-sm transition shadow-lg shadow-crimson-900/50 mt-2">등록 하기</button>
+            </form>
         </div>
     </div>
 
@@ -789,11 +845,19 @@
                 document.getElementById('mypage-name').innerText = currentUser.name;
                 document.getElementById('mypage-email').innerText = currentUser.email;
                 document.getElementById('mypage-initials').innerText = currentUser.name.slice(0,2).toUpperCase();
+                if (currentUser.role === 'admin'){
+                    document.getElementById('admin-upload-btn').classList.remove('hidden');   // 보이기
+                    
+                }
+                else {
+                    document.getElementById('admin-upload-btn').classList.add('hidden');        // 숨기기
+                }
             } else {
                 container.innerHTML = `
                     <button onclick="openAuthModal('login')" class="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition">로그인</button>
                     <button onclick="openAuthModal('signup')" class="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-500 text-white font-semibold shadow-lg shadow-crimson-900/40 transition">회원가입</button>
                 `;
+                document.getElementById('admin-upload-btn').classList.add('hidden');        // 숨기기
             }
         }
 
@@ -854,6 +918,68 @@
             document.getElementById('toss-modal').classList.remove('hidden');
         }
         function closeTossModal() { document.getElementById('toss-modal').classList.add('hidden'); }
+        function openUploadModal() {
+            
+            document.getElementById('upload-modal').classList.remove('hidden');
+        }
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        }
+
+        async function handleUploadSubmit(e){
+            e.preventDefault();
+            
+            const btn = document.getElementById('upload-submit-btn');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '프로젝트 업로드 중...';
+
+            
+            const title = document.getElementById('upload-title').value;
+            const category = document.getElementById('upload-category').value;
+            const price = Number(document.getElementById('upload-price').value);
+            const badge = document.getElementById('upload-badge').value;
+            const description = document.getElementById('upload-description').value;
+            const demo_url = document.getElementById('upload-demo-url').value || null;
+            const download_url = document.getElementById('upload-download-url').value || null;
+            const techs = document.getElementById('upload-tech').value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t);
+             
+            try {
+                const res = await authFetch('/api/projects',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            category: category,
+                            price: price,
+                            badge: badge,
+                            description: description,
+                            download_url: download_url,
+                            demo_url: demo_url,
+                            tech_stack: techs
+                        })
+                    }
+                )
+                if(res.status === 401) { closeUploadModal(); return; } // 로그아웃 처리는 authFetch에서 완료
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.detail);
+
+                closeUploadModal()
+                showToast(data.message)
+                loadProjects()
+                e.target.reset()
+            } catch(err){
+                showToast(err.message)
+            } finally{
+                btn.disabled = false;
+                btn.innerHTML= originalHTML;
+            }
+            
+        }
 
         function selectTossMethod(btn) {
             document.querySelectorAll('.toss-method-btn').forEach(b => {
@@ -868,7 +994,7 @@
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '결제 처리 중...';
-            
+
             try {
                 const res = await authFetch('/api/payment/checkout', {
                     method: 'POST',
