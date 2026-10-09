@@ -343,7 +343,7 @@ def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user
         raise HTTPException(status_code=500, detail="프로젝트 등록 중 오류 발생!")
     finally:
         conn.close()
-    return {"message": "프로젝트 등록 성공!", "id" : new_id}
+    return {"message": "프로젝트 등록 성공", "id" : new_id}
 
 
 # ==========================================
