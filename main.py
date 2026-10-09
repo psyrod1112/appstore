@@ -218,7 +218,7 @@ def login(req: LoginRequest):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     hashed_pw = hash_password(req.password)
-    cursor.execute("SELECT name, email FROM users WHERE email = ? AND password = ?", (req.email, hashed_pw))
+    cursor.execute("SELECT name, email, role FROM users WHERE email = ? AND password = ? ", (req.email, hashed_pw))
     user = cursor.fetchone()
     conn.close()
 
@@ -236,7 +236,7 @@ def login(req: LoginRequest):
     return {
         "message": f"환영합니다, {user[0]}님 🚀",
         "token": token,
-        "user": {"name": user[0], "email": user[1]}
+        "user": {"name": user[0], "email": user[1], "role" : user[2]}
     }
 
 # ==========================================
