@@ -27,16 +27,26 @@ def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     
-    # 1. users 테이블 (role 제거, 이메일 인증 여부 추가)
+    # 1. users 테이블 (이메일 인증 여부 추가)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            is_verified INTEGER DEFAULT 0
+            is_verified INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'user'
         )
     """)
+    #TODO: 기존 DB에 role컬럼이 없으면 ALTER TABLE로 추가
+    cursor.execute(""" PRAGMA table_info(users)""")
+    has_role = False
+    for t in cursor.fetchall():
+        if t[1] == 'role':
+            has_role = True
+    
+    if not has_role:
+        cursor.execute(""" ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user' """)
     
     # 2. projects 테이블 (상품 기본 정보)
     cursor.execute("""
@@ -99,6 +109,7 @@ def init_db():
 def startup_event():
     init_db()
     seed_default_projects()
+    
 
 def seed_default_projects():
     """서버 최초 기동 시 프론트엔드가 요구하는 기본 프로젝트 데이터가 없으면 주입"""
@@ -153,6 +164,22 @@ def get_current_user(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="만료된 토큰입니다. 다시 로그인해주세요.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+
+def get_admin_user(current_user : str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT role FROM users WHERE email = ?
+    """, (current_user,))
+    role = cursor.fetchone()
+    if not role:
+        conn.close()
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    if role[0] != "admin":
+        conn.close()
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
+    conn.close()
+    return current_user
 
 # ==========================================
 # 📡 1. 사용자 인증 및 세션 관리 API (/api/auth)
@@ -281,6 +308,44 @@ def get_project_detail(project_id: int):
         raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     return {"id": row[0], "title": row[1], "category": row[2], "price": row[3]}
 
+
+class ProjectCreate(BaseModel):
+    title : str
+    category : str
+    price : int
+    badge : str
+    description : str
+    download_url : Optional[str] = None
+    demo_url : Optional[str] = None
+    image_gradient : Optional[str] = None
+    tech_stack : List[str]
+
+@app.post("/api/projects", status_code=201)
+def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user)):
+    if req.category not in ("link", "download") or req.price < 0:
+        raise HTTPException(status_code=400, detail="잘못된 값을 기입하였습니다.")
+    price_formatted = "Free" if req.price == 0 else f"₩{req.price:,}"
+    
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    try:
+        
+        cursor.execute("""
+            INSERT INTO projects (title, category, price, price_formatted, badge, description, download_url, demo_url, image_gradient)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (req.title, req.category, req.price, price_formatted, req.badge, req.description, req.download_url, req.demo_url, req.image_gradient))
+
+        new_id = cursor.lastrowid
+        cursor.executemany("INSERT INTO project_tech_stacks (project_id, tech_name) VALUES (?, ?)", [(new_id, t) for t in req.tech_stack])
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail="프로젝트 등록 중 오류 발생!")
+    finally:
+        conn.close()
+    return {"message": "프로젝트 등록 성공!", "id" : new_id}
+
+
 # ==========================================
 # 👤 3. 마이페이지 및 보유 자산 API (/api/user)
 # ==========================================
@@ -300,6 +365,7 @@ def get_user_assets(current_user: str = Depends(get_current_user)):
 
     assets = [{"id": r[0], "title": r[1], "category": r[2], "downloadUrl": r[3], "demoUrl": r[4], "badge": r[5]} for r in rows]
     return assets
+
 
 @app.get("/api/user/history")
 def get_payment_history(current_user: str = Depends(get_current_user)):
@@ -349,19 +415,24 @@ def checkout(req: CheckoutRequest, current_user: str = Depends(get_current_user)
             
     try:
         
+        
+        # 4. 소유권(entitlements) 테이블에 권한 부여 (중복 방지 IGNORE)
+        cursor.execute("""
+            INSERT INTO entitlements (user_email, project_id, granted_at)
+            VALUES (?, ?, ?)
+        """, (current_user, req.project_id, now_str))
+
         # 3. 결제 이력 기록
         cursor.execute("""
             INSERT INTO payment_history (user_email, project_id, order_id, method, amount, date, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (current_user, req.project_id, req.order_id, req.method, proj[2], now_str, "결제 완료"))
         
-        # 4. 소유권(entitlements) 테이블에 권한 부여 (중복 방지 IGNORE)
-        cursor.execute("""
-            INSERT OR IGNORE INTO entitlements (user_email, project_id, granted_at)
-            VALUES (?, ?, ?)
-        """, (current_user, req.project_id, now_str))
 
         conn.commit()
+    except sqlite3.IntegrityError as e:
+        conn.rollback()
+        raise HTTPException(status_code=409, detail="이미 보유한 상품입니다!")
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"결제 처리 중 오류 발생: {str(e)}")
