@@ -712,13 +712,13 @@
                             <circle class="pc-planet" cx="${80 + (p.id * 47) % 240}" cy="${92 - ((p.id * 47) % 240 - 120) / 6}" r="5" fill="#fff"/>
                         </svg>
                         <span class="pc-no">Planet ${no}</span>
-                        <span class="pc-badge">${p.badge}</span>
+                        <span class="pc-badge">${escapeHTML(p.badge)}</span>
                     </div>
                     <div class="p-6 space-y-3 flex-1">
                         <p class="pc-kind">${isDownload ? 'BUILD · 다운로드' : 'LIVE · 브라우저'}</p>
-                        <h3 onclick="openDetailModal(${p.id})" class="text-lg font-bold text-white cursor-pointer group-hover:underline underline-offset-4 decoration-1">${p.title}</h3>
-                        <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${p.description}</p>
-                        <p class="pc-tech">${p.techStack.join('  ·  ')}</p>
+                        <h3 onclick="openDetailModal(${p.id})" class="text-lg font-bold text-white cursor-pointer group-hover:underline underline-offset-4 decoration-1">${escapeHTML(p.title)}</h3>
+                        <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${escapeHTML(p.description)}</p>
+                        <p class="pc-tech">${p.techStack.map(escapeHTML).join('  ·  ')}</p>
                     </div>
                     <div class="pc-foot">
                         <span class="text-base font-bold text-white font-mono">${p.priceFormatted}</span>
@@ -727,8 +727,8 @@
                             ${!p.purchased ?
                                 `<button onclick="initiateCheckout(${p.id})" class="pc-btn">구매</button>` :
                                 (isDownload ?
-                                    `<button onclick="triggerDownload('${p.title}')" class="pc-btn">다운로드</button>` :
-                                    `<a href="${p.demoUrl}" target="_blank" class="pc-btn">착륙 ↗</a>`
+                                    `<button onclick="triggerDownload(${p.id})" class="pc-btn">다운로드</button>` :
+                                    `<a href="${escapeHTML(safeUrl(p.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn">착륙 ↗</a>`
                                 )
                             }
                         </div>
@@ -756,14 +756,14 @@
                         <article class="planet-card">
                             <div class="p-6 space-y-3 flex-1">
                                 <p class="pc-kind">OWNED · ${a.category === 'download' ? 'BUILD' : 'LIVE'}</p>
-                                <h3 class="text-lg font-bold text-white">${a.title}</h3>
-                                <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${description}</p>
+                                <h3 class="text-lg font-bold text-white">${excapeHTML(a.title)}</h3>
+                                <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${excapeHTML(description)}</p>
                             </div>
                             <div class="pc-foot">
                                 <span class="owned-mark">보유 중</span>
                                 ${a.category === 'download' ?
-                                    `<button onclick="triggerDownload('${a.title}')" class="pc-btn">빌드 다운로드</button>` :
-                                    `<a href="${a.demoUrl}" target="_blank" class="pc-btn">착륙 ↗</a>`
+                                    `<button onclick="triggerDownload(${a.id})" class="pc-btn">빌드 다운로드</button>` :
+                                    `<a href="${escapeHTML(safeUrl(a.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn">착륙 ↗</a>`
                                 }
                             </div>
                         </article>
@@ -789,12 +789,12 @@
                     }
                     tbody.innerHTML = history.map(h => `
                         <tr>
-                            <td class="text-zinc-500">${h.orderId}</td>
-                            <td class="text-white font-sans font-semibold">${h.title}</td>
-                            <td>${h.method}</td>
-                            <td class="text-white">${h.amount}</td>
-                            <td>${h.date}</td>
-                            <td><span class="status-dot"></span>${h.status}</td>
+                            <td class="text-zinc-500">${escapeHTML(h.orderId)}</td>
+                            <td class="text-white font-sans font-semibold">${escapeHTML(h.title)}</td>
+                            <td>${escapeHTML(h.method)}</td>
+                            <td class="text-white">${escapeHTML(h.amount)}</td>
+                            <td>${escapeHTML(h.date)}</td>
+                            <td><span class="status-dot"></span>${escapeHTML(h.status)}</td>
                         </tr>
                     `).join('');
                 }
@@ -954,8 +954,8 @@
                 container.innerHTML = `
                     <div class="flex items-center space-x-3">
                         <button onclick="switchTab('mypage')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-burgundy-950 border border-crimson-900/50 text-xs font-medium text-slate-200 hover:bg-burgundy-900 transition">
-                            <div class="w-6 h-6 rounded-lg bg-crimson-700 text-white font-bold flex items-center justify-center text-[11px]">${currentUser.name.slice(0,2).toUpperCase()}</div>
-                            <span class="hidden sm:inline">${currentUser.name}</span>
+                            <div class="w-6 h-6 rounded-lg bg-crimson-700 text-white font-bold flex items-center justify-center text-[11px]">${escapeHTML(currentUser.name).slice(0,2).toUpperCase()}</div>
+                            <span class="hidden sm:inline">${escapeHTML(currentUser.name)}</span>
                         </button>
                     </div>
                 `;
@@ -986,12 +986,12 @@
             document.getElementById('detail-modal-content').innerHTML = `
                 <div class="space-y-3 pr-10">
                     <p class="tagline text-[10px] text-zinc-500">Planet ${String(p.id).padStart(3, '0')} · ${p.category === 'download' ? 'Build' : 'Live'}</p>
-                    <h2 class="text-3xl font-extrabold tracking-tight text-white">${p.title}</h2>
-                    <p class="font-mono text-xs text-zinc-500">${p.badge}</p>
+                    <h2 class="text-3xl font-extrabold tracking-tight text-white">${escapeHTML(p.title)}</h2>
+                    <p class="font-mono text-xs text-zinc-500">${escapeHTML(p.badge)}</p>
                 </div>
-                <p class="text-zinc-300 text-sm leading-relaxed">${p.description}</p>
+                <p class="text-zinc-300 text-sm leading-relaxed">${excapeHTML(p.description)}</p>
                 <div class="detail-grid">
-                    <div><p class="field-label">Stack</p><p class="detail-val">${p.techStack.join(' · ')}</p></div>
+                    <div><p class="field-label">Stack</p><p class="detail-val">${p.techStack.map(escapeHTML).join(' · ')}</p></div>
                     <div><p class="field-label">Price</p><p class="detail-val text-white">${p.priceFormatted}</p></div>
                     <div><p class="field-label">다운로드·접속</p><p class="detail-val">${p.downloadsCount}회</p></div>
                     <div><p class="field-label">평점</p><p class="detail-val">${p.rating} / 5.0</p></div>
@@ -1001,8 +1001,8 @@
                     ${!p.purchased ?
                         `<button onclick="closeDetailModal(); initiateCheckout(${p.id});" class="pc-btn px-6 py-3">구매하기</button>` :
                         (p.category === 'download' ?
-                            `<button onclick="triggerDownload('${p.title}')" class="pc-btn px-6 py-3">빌드 다운로드</button>` :
-                            `<a href="${p.demoUrl}" target="_blank" class="pc-btn px-6 py-3">착륙 ↗</a>`
+                            `<button onclick="triggerDownload(${p.id})" class="pc-btn px-6 py-3">빌드 다운로드</button>` :
+                            `<a href="${escapeHTML(safeUrl(p.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn px-6 py-3">착륙 ↗</a>`
                         )
                     }
                 </div>
@@ -1132,12 +1132,13 @@
             }
         }
 
-        function triggerDownload(title) {
-            showToast(`${title} · 빌드 다운로드 시작`);
+        function triggerDownload(id) {
+            const p = projectsData.find(item => item.id === id);
+            showToast(`${p.title} · 빌드 다운로드 시작`);
             const element = document.createElement('a');
-            const file = new Blob([`=== PSYSTORE BUILD ASSET ===\nProject: ${title}\nUser Session Verified`], {type: 'text/plain'});
+            const file = new Blob([`=== PSYSTORE BUILD ASSET ===\nProject: ${p.title}\nUser Session Verified`], {type: 'text/plain'});
             element.href = URL.createObjectURL(file);
-            element.download = `${title.toLowerCase().replace(/\s+/g, '-')}-build.zip`;
+            element.download = `${p.title.toLowerCase().replace(/\s+/g, '-')}-build.zip`;
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
@@ -1148,7 +1149,12 @@
             if(!container) return;
             const toast = document.createElement('div');
             toast.className = "glass-panel px-5 py-3 rounded-2xl text-xs text-slate-100 border border-crimson-800 shadow-2xl toast-rise flex items-center gap-3 pointer-events-auto bg-[#1e0509]";
-            toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-crimson-500"></i><span>${message}</span>`;
+            toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-crimson-500"></i>`;
+
+            const span = document.createElement('span');
+            span.textContent = message;
+
+            toast.append(span)
             container.appendChild(toast);
             lucide.createIcons();
 
@@ -1167,6 +1173,25 @@
             clearTimeout(reservedId);                    // 그 예약을 취소
             reservedId = setTimeout(loadProjects, 300);   // 300ms 뒤에 함수를 실행하도록 "예약". 예약 번호를 돌려줌
         }
+
+        function escapeHTML(value) {
+            return String(value ?? '')          // null/undefined면 빈 문자열, 숫자면 문자열로
+                .replaceAll('&', '&amp;')       // ← 반드시 첫 번째!
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;')
+                ;
+        }
+        function safeUrl(url) {
+            try {
+                const u = new URL(url, location.origin);     // 주소를 분해 (상대주소 "/"도 처리)
+                return ['http:', 'https:'].includes(u.protocol) ? u.href : '#';
+            } catch {
+                return '#';                                  // 주소 형식이 아예 이상하면
+            }
+        }
+
     </script>
 
     <!-- HERO ORBIT (첫 화면 전용 · 기존 로직과 분리된 별도 스크립트) -->
