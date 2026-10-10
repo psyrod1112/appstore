@@ -304,7 +304,7 @@ def get_projects(category: Optional[str] = "all", search: Optional[str] = None, 
             "downloadsCount": row[7],
             "rating": row[8],
             "downloadUrl": row[9],
-            "demoUrl": row[10],
+            "demoUrl": row[10] if purchased else None,
             "purchased": purchased,
             "imageGradient": row[11]
         })
