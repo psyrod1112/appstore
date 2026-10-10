@@ -402,7 +402,7 @@
                     <label class="relative flex-1 sm:w-72">
                         <span class="sr-only">행성 이름 검색</span>
                         <i data-lucide="search" class="absolute left-0 top-2.5 w-4 h-4 text-zinc-500"></i>
-                        <input type="text" id="project-search" oninput="loadProjects()" placeholder="행성 이름 검색" class="search-line">
+                        <input type="text" id="project-search" oninput="onSearchInput()" placeholder="행성 이름 검색" class="search-line">
                     </label>
                     <div class="text-xs text-zinc-500 font-mono whitespace-nowrap" id="project-count-label">Loading...</div>
                 </div>
@@ -630,6 +630,7 @@
         let currentAuthMode = 'login';
         let selectedProductForCheckout = null;
         let currentOrderId = null;
+        let reservedId = null;
 
         // JWT Token & User Info State from localStorage
         let authToken = localStorage.getItem('crimson_token') || null;
@@ -1160,6 +1161,11 @@
 
         function toggleMobileMenu() {
             document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function onSearchInput() {
+            clearTimeout(reservedId);                    // 그 예약을 취소
+            reservedId = setTimeout(loadProjects, 300);   // 300ms 뒤에 함수를 실행하도록 "예약". 예약 번호를 돌려줌
         }
     </script>
 
