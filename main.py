@@ -165,6 +165,20 @@ def get_current_user(authorization: Optional[str] = Header(None)):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
+
+def get_optional_user(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub") # user_email 반환
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+    
+
 def get_admin_user(current_user : str = Depends(get_current_user)):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -243,7 +257,7 @@ def login(req: LoginRequest):
 # 🛍️ 2. 마켓플레이스 프로젝트 관리 API (/api/projects)
 # ==========================================
 @app.get("/api/projects")
-def get_projects(category: Optional[str] = "all", search: Optional[str] = None, user_email: Optional[str] = None):
+def get_projects(category: Optional[str] = "all", search: Optional[str] = None, user_email: Optional[str] = Depends(get_optional_user)):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     

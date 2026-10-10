@@ -662,10 +662,9 @@
             const searchQuery = document.getElementById('project-search')?.value || '';
             let url = `/api/projects?category=${currentFilter}`;
             if(searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
-            if(currentUser && currentUser.email) url += `&user_email=${encodeURIComponent(currentUser.email)}`;
 
             try {
-                const res = await fetch(url);
+                const res = authToken ? await authFetch(url) : await fetch(url);
                 projectsData = await res.json();
                 renderHomeFeatured();
                 renderProjectsGrid();
