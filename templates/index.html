@@ -15,27 +15,8 @@
     <meta property="og:image" content="https://appstore.psyrod.dev/og.png">
     <meta name="twitter:card" content="summary_large_image">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    /* 팔레트 이름(crimson/burgundy)은 스크립트가 그대로 쓰므로 유지하고, 값만 흑백·실버로 교체 */
-                    colors: {
-                        crimson: {
-                            50: '#f4f4f5', 100: '#e4e4e7', 300: '#d4d4d8', 400: '#a1a1aa', 500: '#d4d4d8', 600: '#a1a1aa',
-                            700: '#3f3f46', 800: '#2e2e33', 900: '#1f1f23', 950: '#121214',
-                        },
-                        burgundy: { 800: '#1c1c1f', 900: '#161618', 950: '#0d0d0f' },
-                        rose: { 300: '#d4d4d8', 400: '#e4e4e7' },
-                        emerald: { 400: '#ffffff', 600: '#71717a', 700: '#3f3f46', 800: '#52525b', 900: '#27272a', 950: '#18181b' }
-                    },
-                    fontFamily: { sans: ['Manrope', 'Pretendard', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], wide: ['Jost', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/static/tailwind.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@300;400;500;600;700;800&family=Jost:wght@300;400&display=swap" rel="stylesheet">

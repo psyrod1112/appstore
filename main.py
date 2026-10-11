@@ -37,6 +37,9 @@ R2_BUCKET = os.getenv("R2_BUCKET")
 # HTML 템플릿 연결 (templates 폴더 안에 Crimson UI html을 index.html로 넣어두면 됨)
 templates = Jinja2Templates(directory="templates")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
 # ==========================================
 # 🗄️ 데이터베이스 스키마 초기화 (정규화 및 소유권 테이블 포함)
 # ==========================================
