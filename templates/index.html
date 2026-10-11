@@ -536,6 +536,10 @@
                     <input type="text" id="upload-download-url" placeholder="(나중에 R2로 대체)" class="field">
                 </div>
                 <div class="space-y-1.5 ">
+                    <label class="field-label">빌드 파일 (zip / exe)</label>
+                    <input type="file" id="upload-file" accept=".zip,.exe,.7z" class="field">
+                </div>
+                <div class="space-y-1.5 ">
                     <label class="field-label">기술 스택</label>
                     <input type="text" id="upload-tech" required placeholder="Python, FastAPI, Docker" class="field">
                 </div>
@@ -755,8 +759,8 @@
                         <article class="planet-card">
                             <div class="p-6 space-y-3 flex-1">
                                 <p class="pc-kind">OWNED · ${a.category === 'download' ? 'BUILD' : 'LIVE'}</p>
-                                <h3 class="text-lg font-bold text-white">${excapeHTML(a.title)}</h3>
-                                <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${excapeHTML(description)}</p>
+                                <h3 class="text-lg font-bold text-white">${escapeHTML(a.title)}</h3>
+                                <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${escapeHTML(description)}</p>
                             </div>
                             <div class="pc-foot">
                                 <span class="owned-mark">보유 중</span>
@@ -988,7 +992,7 @@
                     <h2 class="text-3xl font-extrabold tracking-tight text-white">${escapeHTML(p.title)}</h2>
                     <p class="font-mono text-xs text-zinc-500">${escapeHTML(p.badge)}</p>
                 </div>
-                <p class="text-zinc-300 text-sm leading-relaxed">${excapeHTML(p.description)}</p>
+                <p class="text-zinc-300 text-sm leading-relaxed">${escapeHTML(p.description)}</p>
                 <div class="detail-grid">
                     <div><p class="field-label">Stack</p><p class="detail-val">${p.techStack.map(escapeHTML).join(' · ')}</p></div>
                     <div><p class="field-label">Price</p><p class="detail-val text-white">${p.priceFormatted}</p></div>
@@ -1075,6 +1079,21 @@
                 if(res.status === 401) { closeUploadModal(); return; } // 로그아웃 처리는 authFetch에서 완료
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.detail);
+
+                const file = document.getElementById('upload-file').files[0]
+                if (file) {
+                    const fd = new FormData();
+                    fd.append('file', file)
+                    const fileRes = await authFetch(`/api/projects/${data.id}/file`,
+                        {
+                            method: 'POST',
+                            body: fd
+                        }
+                    )
+                    if (!fileRes.ok){
+                        showToast("프로젝트는 등록되었으나, 파일 업로드에 실패...");
+                    }
+                }
 
                 closeUploadModal()
                 showToast(data.message)

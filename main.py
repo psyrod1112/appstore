@@ -10,12 +10,24 @@ import datetime
 from typing import List, Optional
 import os
 from dotenv import load_dotenv
+import boto3
+from fastapi import UploadFile, File
+
 load_dotenv()
 
 app = FastAPI(title="Alex Crimson DevStore API", version="2.0.0")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url=os.getenv("R2_ENDPOINT"),
+    aws_access_key_id=os.getenv("R2_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("R2_SECRET_ACCESS_KEY"),
+    region_name="auto",
+)
+R2_BUCKET = os.getenv("R2_BUCKET")
 
 # HTML 템플릿 연결 (templates 폴더 안에 Crimson UI html을 index.html로 넣어두면 됨)
 templates = Jinja2Templates(directory="templates")
@@ -38,7 +50,7 @@ def init_db():
             role TEXT DEFAULT 'user'
         )
     """)
-    #TODO: 기존 DB에 role컬럼이 없으면 ALTER TABLE로 추가
+    
     cursor.execute(""" PRAGMA table_info(users)""")
     has_role = False
     for t in cursor.fetchall():
@@ -62,9 +74,19 @@ def init_db():
             rating REAL DEFAULT 5.0,
             download_url TEXT,
             demo_url TEXT,
-            image_gradient TEXT
+            image_gradient TEXT,
+            file_key TEXT
         )
     """)
+
+    cursor.execute(" PRAGMA table_info(projects)")
+    has_file_key = False
+    for t in cursor.fetchall():
+        if t[1] == 'file_key':
+            has_file_key = True
+
+    if not has_file_key:
+        cursor.execute(" ALTER TABLE projects ADD COLUMN file_key TEXT")
     
     # 3. project_tech_stacks 테이블 (정규화: 1:N 기술 스택)
     cursor.execute("""
@@ -358,6 +380,31 @@ def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user
     finally:
         conn.close()
     return {"message": "프로젝트 등록 성공", "id" : new_id}
+
+@app.post("/api/projects/{project_id}/file")
+def upload_project_file(project_id: int, file: UploadFile = File(...), admin_user: str = Depends(get_admin_user)):
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute(" SELECT * FROM projects WHERE id = ?", (project_id,))
+    proj = cursor.fetchone()
+    if not proj:
+        conn.close()
+        raise HTTPException(status_code=404, detail="파일이 없습니다.")
+    try:
+        key = f"projects/{project_id}/{os.path.basename(file.filename)}"
+                
+        s3.upload_fileobj(file.file, R2_BUCKET, key, ExtraArgs={"ContentType": file.content_type})
+        
+        cursor.execute(" UPDATE projects SET file_key = ? WHERE id = ?", (key, project_id))
+        conn.commit()
+
+        return {"message": "파일 업로드 완료", "file_key": key}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    finally:
+        conn.close()
 
 
 # ==========================================
