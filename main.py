@@ -13,6 +13,10 @@ from dotenv import load_dotenv
 import boto3
 from fastapi import UploadFile, File
 from urllib.parse import quote       
+import smtplib                               
+from email.message import EmailMessage   
+from fastapi import BackgroundTasks 
+
 
 load_dotenv()
 
@@ -173,6 +177,23 @@ def send_mock_email(to_email: str, subject: str, content: str):
     print(f"BODY:\n{content}")
     print(f"----------------------------------------------------------\n")
 
+
+def send_email(to_email: str, subject: str, content: str):
+    msg = EmailMessage()
+    msg["From"] = os.getenv("MAIL_FROM")
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(content)                    # 본문 (일반 텍스트)
+
+    try:
+        with smtplib.SMTP_SSL(os.getenv("SMTP_HOST"), int(os.getenv("SMTP_PORT")), timeout=10) as server:
+            server.login(os.getenv("SMTP_USER"), os.getenv("SMTP_PASSWORD"))
+            server.send_message(msg)
+        print(f"[EMAIL] 발송 성공 → {to_email} / {subject}")
+    except Exception as e:
+        print(f"[EMAIL] 발송 실패 → {to_email} / {e}")   # 실패해도 서버는 멈추지 않음
+
+
 # ==========================================
 # 🔒 인증 관련 헬퍼 (JWT 검증 의존성)
 # ==========================================
@@ -247,7 +268,7 @@ def signup(req: SignupRequest):
         conn.close()
     
     # 회원가입 성공 시 모의 이메일 발송
-    send_mock_email(req.email, "[Alex.Crimson] 회원가입을 환영합니다!", f"{req.name}님, DevStore & Portfolio 가입이 완료되었습니다.")
+    send_mock_email(req.email, "[PsyStore] 회원가입을 환영합니다!", f"{req.name}님, DevStore & Portfolio 가입이 완료되었습니다.")
     return {"message": "회원가입이 완료되었습니다. 이메일 인증을 진행해주세요."}
 
 @app.post("/api/login")
@@ -487,7 +508,7 @@ class CheckoutRequest(BaseModel):
     amount: int
 
 @app.post("/api/payment/checkout")
-def checkout(req: CheckoutRequest, current_user: str = Depends(get_current_user)):
+def checkout(req: CheckoutRequest, background_tasks: BackgroundTasks, current_user: str = Depends(get_current_user)):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
@@ -513,8 +534,6 @@ def checkout(req: CheckoutRequest, current_user: str = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="결제 값이 다릅니다!")
             
     try:
-        
-        
         # 4. 소유권(entitlements) 테이블에 권한 부여 (중복 방지 IGNORE)
         cursor.execute("""
             INSERT INTO entitlements (user_email, project_id, granted_at)
@@ -538,12 +557,15 @@ def checkout(req: CheckoutRequest, current_user: str = Depends(get_current_user)
     finally:
         conn.close()
 
-    # 5. 결제 완료 모의 이메일 전송
-    send_mock_email(
-        current_user,
-        f"[Alex.Crimson] 결제 및 소유권 승인 완료 ({req.order_id})",
-        f"주문하신 [{proj[0]}] 상품의 결제({proj[2]})가 정상 승인되었습니다.\n마이페이지에서 소스코드를 다운로드하실 수 있습니다."
-    )
+    body = "\n".join([
+        f"주문 번호: {req.order_id}",
+        f"프로젝트 이름: {proj[0]}",
+        f"금액: {proj[2]}",
+        f"결제 일시: {now_str}",
+        "라이브러리 링크: https://appstore.psyrod.dev/#mypage",
+    ])
+    # 5. 결제 완료 이메일 전송
+    background_tasks.add_task(send_email, current_user, f"[PsyStore] 결제가 완료되었습니다! {req.order_id}", body)
 
     return {"message": "결제 승인 및 소유권 발급 완료!", "order_id": req.order_id}
 
