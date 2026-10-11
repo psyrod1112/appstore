@@ -20,7 +20,7 @@ from fastapi import BackgroundTasks
 
 load_dotenv()
 
-app = FastAPI(title="Alex Crimson DevStore API", version="2.0.0")
+app = FastAPI(title="PsyStore API", version="2.0.0")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
