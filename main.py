@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 import boto3
 from fastapi import UploadFile, File
+from urllib.parse import quote       
 
 load_dotenv()
 
@@ -283,7 +284,7 @@ def get_projects(category: Optional[str] = "all", search: Optional[str] = None, 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     
-    query = "SELECT id, title, category, price, price_formatted, badge, description, downloads_count, rating, download_url, demo_url, image_gradient FROM projects WHERE 1=1"
+    query = "SELECT id, title, category, price, price_formatted, badge, description, downloads_count, rating, download_url, demo_url, image_gradient, file_key FROM projects WHERE 1=1"
     params = []
 
     if category and category != "all":
@@ -328,7 +329,8 @@ def get_projects(category: Optional[str] = "all", search: Optional[str] = None, 
             "downloadUrl": row[9],
             "demoUrl": row[10] if purchased else None,
             "purchased": purchased,
-            "imageGradient": row[11]
+            "imageGradient": row[11],
+            "hasFile": row[12] is not None
         })
     conn.close()
     return projects
@@ -406,6 +408,42 @@ def upload_project_file(project_id: int, file: UploadFile = File(...), admin_use
     finally:
         conn.close()
 
+@app.get("/api/projects/{project_id}/download")
+def download_project_file(project_id: int, current_user: str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute(" SELECT price, file_key FROM projects WHERE id = ?", (project_id,))
+    proj = cursor.fetchone()
+    if not proj:
+        conn.close()
+        raise HTTPException(status_code=404, detail="상품이 없습니다.")
+
+    if not proj[1]:
+        conn.close()
+        raise HTTPException(status_code=404, detail="아직 상품 준비가 완료되지 않음")
+
+    if proj[0] > 0:
+        cursor.execute(" SELECT 1 FROM entitlements WHERE user_email = ? AND project_id = ?", (current_user, project_id))
+        entitlement = cursor.fetchone()
+        if not entitlement:
+            conn.close()
+            raise HTTPException(status_code=403, detail="소유권이 없습니다.")
+    #여기까지 왔다는 것 자체가 무료 or 유료인데 소유권확인 절차까지 통과
+    filename = os.path.basename(proj[1])
+    url = s3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": R2_BUCKET,
+            "Key": proj[1],
+            "ResponseContentDisposition": f"attachment; filename*=UTF-8''{quote(filename)}",
+        },
+        ExpiresIn=300,
+    )
+    cursor.execute(" UPDATE projects SET downloads_count = downloads_count + 1 WHERE id = ?", (project_id,))
+
+    conn.commit()
+    conn.close()
+    return {"url": url}
 
 # ==========================================
 # 👤 3. 마이페이지 및 보유 자산 API (/api/user)
@@ -416,7 +454,7 @@ def get_user_assets(current_user: str = Depends(get_current_user)):
     cursor = conn.cursor()
     # entitlements 테이블을 조인해서 소유한 프로젝트 목록만 초고속 조회!
     cursor.execute("""
-        SELECT p.id, p.title, p.category, p.download_url, p.demo_url, p.badge
+        SELECT p.id, p.title, p.category, p.download_url, p.demo_url, p.badge, p.file_key
         FROM entitlements e
         JOIN projects p ON e.project_id = p.id
         WHERE e.user_email = ?
@@ -424,7 +462,7 @@ def get_user_assets(current_user: str = Depends(get_current_user)):
     rows = cursor.fetchall()
     conn.close()
 
-    assets = [{"id": r[0], "title": r[1], "category": r[2], "downloadUrl": r[3], "demoUrl": r[4], "badge": r[5]} for r in rows]
+    assets = [{"id": r[0], "title": r[1], "category": r[2], "downloadUrl": r[3], "demoUrl": r[4], "badge": r[5], "hasFile": r[6] is not None} for r in rows]
     return assets
 
 

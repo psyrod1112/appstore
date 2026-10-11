@@ -730,7 +730,10 @@
                             ${!p.purchased ?
                                 `<button onclick="initiateCheckout(${p.id})" class="pc-btn">구매</button>` :
                                 (isDownload ?
-                                    `<button onclick="triggerDownload(${p.id})" class="pc-btn">다운로드</button>` :
+                                    (p.hasFile
+                                        ? `<button onclick="triggerDownload(${p.id})" class="pc-btn px-6 py-3">빌드 다운로드</button>`
+                                        : `<button class="pc-btn opacity-40 cursor-not-allowed" disabled>준비 중</button>`)
+                                    :
                                     `<a href="${escapeHTML(safeUrl(p.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn">착륙 ↗</a>`
                                 )
                             }
@@ -765,7 +768,10 @@
                             <div class="pc-foot">
                                 <span class="owned-mark">보유 중</span>
                                 ${a.category === 'download' ?
-                                    `<button onclick="triggerDownload(${a.id})" class="pc-btn">빌드 다운로드</button>` :
+                                    (a.hasFile
+                                        ? `<button onclick="triggerDownload(${a.id})" class="pc-btn px-6 py-3">빌드 다운로드</button>`
+                                        : `<button class="pc-btn opacity-40 cursor-not-allowed" disabled>준비 중</button>`)
+                                    :
                                     `<a href="${escapeHTML(safeUrl(a.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn">착륙 ↗</a>`
                                 }
                             </div>
@@ -1004,7 +1010,10 @@
                     ${!p.purchased ?
                         `<button onclick="closeDetailModal(); initiateCheckout(${p.id});" class="pc-btn px-6 py-3">구매하기</button>` :
                         (p.category === 'download' ?
-                            `<button onclick="triggerDownload(${p.id})" class="pc-btn px-6 py-3">빌드 다운로드</button>` :
+                            (p.hasFile
+                                ? `<button onclick="triggerDownload(${p.id})" class="pc-btn px-6 py-3">빌드 다운로드</button>`
+                                : `<button class="pc-btn opacity-40 cursor-not-allowed" disabled>준비 중</button>`)
+                            :
                             `<a href="${escapeHTML(safeUrl(p.demoUrl))}" rel="noopener noreferrer" target="_blank" class="pc-btn px-6 py-3">착륙 ↗</a>`
                         )
                     }
@@ -1150,16 +1159,18 @@
             }
         }
 
-        function triggerDownload(id) {
-            const p = projectsData.find(item => item.id === id);
-            showToast(`${p.title} · 빌드 다운로드 시작`);
-            const element = document.createElement('a');
-            const file = new Blob([`=== PSYSTORE BUILD ASSET ===\nProject: ${p.title}\nUser Session Verified`], {type: 'text/plain'});
-            element.href = URL.createObjectURL(file);
-            element.download = `${p.title.toLowerCase().replace(/\s+/g, '-')}-build.zip`;
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
+        async function triggerDownload(id) {
+            try {
+                const res = await authFetch(`/api/projects/${id}/download`);
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.detail);
+
+                showToast("다운로드를 시작합니다");
+                location.href = data.url;
+
+            } catch(err) {
+                showToast(err.message);
+            }
         }
 
         function showToast(message) {
