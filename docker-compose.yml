@@ -1,0 +1,12 @@
+services:
+  psystore:
+    build: .
+    container_name: psystore
+    ports:
+      - "8001:8001"
+    env_file: .env
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./database.db:/app/database.db 
+    restart: always
