@@ -1,0 +1,26 @@
+{
+  "name": "portfolio",
+  "version": "1.0.0",
+  "description": "Just Type https://appstore.psyrod.dev/",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "tailwindcss -i ./src/input.css -o ./static/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./static/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/psyrod1112/appstore.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/psyrod1112/appstore/issues"
+  },
+  "homepage": "https://github.com/psyrod1112/appstore#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
