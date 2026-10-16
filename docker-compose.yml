@@ -9,4 +9,5 @@ services:
       - TZ=Asia/Seoul
     volumes:
       - ./database.db:/app/database.db 
+      - ./secrets:/app/secrets:ro #readonly
     restart: always

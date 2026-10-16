@@ -5,3 +5,4 @@ database.db
 *.bak
 r2_test.py
 node_modules/
+secrets/

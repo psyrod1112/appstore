@@ -6,3 +6,4 @@ database.db
 r2_test.py
 node_modules/
 .git
+secrets/
