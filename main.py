@@ -16,6 +16,9 @@ from urllib.parse import quote
 import smtplib                               
 from email.message import EmailMessage   
 from fastapi import BackgroundTasks 
+import firebase_admin
+from firebase_admin import credentials, messaging
+
 
 
 load_dotenv()
@@ -39,6 +42,7 @@ templates = Jinja2Templates(directory="templates")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+firebase_admin.initialize_app(credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS")))   # 서버 시작 시 1번. env에서 경로 읽기
 
 # ==========================================
 # 🗄️ 데이터베이스 스키마 초기화 (정규화 및 소유권 테이블 포함)
@@ -128,6 +132,17 @@ def init_db():
             project_id INTEGER NOT NULL,
             granted_at TEXT NOT NULL,
             UNIQUE(user_email, project_id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS device_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT NOT NULL,
+            fcm_token TEXT UNIQUE NOT NULL,
+            platform TEXT,
+            created_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL
         )
     """)
     
@@ -301,6 +316,83 @@ def login(req: LoginRequest):
     }
 
 # ==========================================
+# 1.5 디바이스 앱 관련 API
+# ==========================================
+
+class FcmRequest(BaseModel):
+    fcm_token: str
+    platform: str
+
+@app.post("/api/devices")
+def upsert_fcm_token(req: FcmRequest, user_email: str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO device_tokens (user_email, fcm_token, platform, created_at, last_seen_at) 
+            VALUES (?,?,?,?,?)
+            ON CONFLICT(fcm_token) DO UPDATE SET
+                user_email = excluded.user_email,
+                platform = excluded.platform,
+                last_seen_at = excluded.last_seen_at
+        """, (user_email, req.fcm_token, req.platform, datetime.datetime.utcnow(),  datetime.datetime.utcnow()))
+
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="FCM 정보 등록에 실패") 
+    finally:
+        conn.close()
+    return {"message": "FCM 등록 성공"}
+
+@app.delete("/api/devices/{fcm_token}")
+def delete_fcm_token(fcm_token: str, user_email: str = Depends(get_current_user)):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor() 
+    try:
+        cursor.execute("DELETE FROM device_tokens WHERE user_email = ? AND fcm_token = ?", (user_email,fcm_token))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail="FCM 정보 저장에 실패") 
+    finally:
+        conn.close()
+    return {"message": "FCM 삭제 성공"}
+
+@app.post("/api/push/test")
+def test_push_message(background_tasks: BackgroundTasks, _: str = Depends(get_admin_user)):
+    background_tasks.add_task(send_push, "푸쉬 테스트", "푸쉬 테스트 메시지입니다.", {"project_id": "1"})
+    return {"message": "푸쉬 테스트 전송 요청 완료"}
+
+def send_push(title: str, body: str, data: dict):
+    # (1) DB에서 fcm_token 전부 SELECT → tokens 리스트
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT fcm_token FROM device_tokens")
+    tokens = [row[0] for row in cursor.fetchall()]
+    try:
+        if not tokens: return
+        msg = messaging.MulticastMessage(
+            tokens=tokens,
+            notification=messaging.Notification(title=title, body=body),
+            data=data,          # ⚠️ FCM data는 값이 전부 '문자열'이어야 해요
+        )
+        resp = messaging.send_each_for_multicast(msg)
+        for i in range(len(resp.responses)):
+            if not resp.responses[i].success and isinstance(resp.responses[i].exception, messaging.UnregisteredError):
+                cursor.execute("DELETE FROM device_tokens WHERE fcm_token = ?",(tokens[i],))
+            # (2) resp.responses[i].success가 False이고
+            #     isinstance(resp.responses[i].exception, messaging.UnregisteredError)이면
+            #     tokens[i]를 DELETE
+            # (3) print로 성공 수 / 실패 수 로그 남기기 (resp.success_count, resp.failure_count)
+        print(resp.success_count, "/" ,resp.failure_count )
+    except Exception as e:
+        print("푸쉬 알림 응답이 없습니다", f"{e!r}")
+    finally:
+        conn.commit()
+        conn.close()
+ 
+
+# ==========================================
 # 🛍️ 2. 마켓플레이스 프로젝트 관리 API (/api/projects)
 # ==========================================
 @app.get("/api/projects")
@@ -383,7 +475,7 @@ class ProjectCreate(BaseModel):
     tech_stack : List[str]
 
 @app.post("/api/projects", status_code=201)
-def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user)):
+def create_project(req: ProjectCreate, background_tasks: BackgroundTasks, admin_user : str = Depends(get_admin_user)):
     if req.category not in ("link", "download") or req.price < 0:
         raise HTTPException(status_code=400, detail="잘못된 값을 기입하였습니다.")
     price_formatted = "Free" if req.price == 0 else f"₩{req.price:,}"
@@ -405,6 +497,9 @@ def create_project(req: ProjectCreate, admin_user : str = Depends(get_admin_user
         raise HTTPException(status_code=500, detail="프로젝트 등록 중 오류 발생!")
     finally:
         conn.close()
+
+    background_tasks.add_task(send_push, "새 행성 등장!", req.title, {"project_id": str(new_id)})
+
     return {"message": "프로젝트 등록 성공", "id" : new_id}
 
 @app.post("/api/projects/{project_id}/file")
@@ -582,3 +677,12 @@ def serve_frontend():
             return f.read()
     except FileNotFoundError:
         return "<h3>templates/index.html 파일이 없습니다. 프론트엔드 코드를 templates 폴더 안에 넣어주세요!</h3>"
+
+@app.get("/privacy", response_class=HTMLResponse)
+def serve_privacy_screen():
+    try:
+        with open("templates/privacy.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "<h3>templates/privacy.html 파일이 없습니다. 프론트엔드 코드를 templates 폴더 안에 넣어주세요!</h3>"
+
